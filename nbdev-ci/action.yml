@@ -29,6 +29,10 @@ inputs:
     description: 'GitHub token'
     required: false
     default: '${{ github.token }}'
+  private_pypi_auth_url:
+    description: 'Private PyPI authentication URL'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -48,6 +52,7 @@ runs:
         SKIP_TEST: ${{ inputs.skip_test }}
         PROD_EDITABLE_INSTALL: ${{ inputs.prod_editable_install }}
         FLAGS: ${{ inputs.flags }}
+        PRIVATE_PYPI_AUTH_URL: ${{ inputs.private_pypi_auth_url }}
       shell: bash
       run: |
         set -ux
@@ -61,6 +66,9 @@ runs:
           pip install -U nbdev
         fi
         echo "Doing editable install..."
+        if [ ! -z "$PRIVATE_PYPI_AUTH_URL" ]; then
+          pip config set global.extra-index-url $PRIVATE_PYPI_AUTH_URL
+        fi
         if [ $PROD_EDITABLE_INSTALL == "true" ]; then
           test -f setup.py && pip install -e "."
         else

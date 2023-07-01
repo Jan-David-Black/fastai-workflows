@@ -13,6 +13,10 @@ inputs:
     description: 'GitHub token'
     default: ${{ github.token }}
     required: false
+  torch_cpu:
+    description: "Install PyTorch CPU instead of PyTorch Cuda.  Has no effect if PyTorch isn't a requirement.  Enabled by defaut."
+    required: false
+    default: true
   private_pypi_auth_url:
     description: 'Private PyPI authentication URL'
     required: false
@@ -36,6 +40,7 @@ runs:
     - name: Install Dependencies
       env:
         USE_PRE: ${{ inputs.pre }}
+        TORCH_CPU: "${{ inputs.torch_cpu }}"
         PRIVATE_PYPI_AUTH_URL: ${{ inputs.private_pypi_auth_url }}
       shell: bash
       run: |
@@ -54,7 +59,11 @@ runs:
         if [ ! -z "$PRIVATE_PYPI_AUTH_URL" ]; then
           pip config set global.extra-index-url $PRIVATE_PYPI_AUTH_URL
         fi
-        test -f setup.py && pip install -e ".[dev]"
+        if [ $TORCH_CPU ]; then
+          test -f setup.py && pip install -e ".[dev]" --extra-index-url https://download.pytorch.org/whl/cpu
+        else
+          test -f setup.py && pip install -e ".[dev]"
+        fi
         nbdev_docs
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3

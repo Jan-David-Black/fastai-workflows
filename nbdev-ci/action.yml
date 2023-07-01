@@ -33,10 +33,14 @@ inputs:
     description: 'Private PyPI authentication URL'
     required: false
     default: ''
+  torch_cpu:
+    description: "Install PyTorch CPU instead of PyTorch Cuda.  Has no effect if PyTorch isn't a requirement.  Enabled by defaut."
+    required: false
+    default: true
 
 runs:
   using: "composite"
-  steps: 
+  steps:
     - uses: actions/checkout@v3
       with:
         lfs: "${{ inputs.enable_git_lfs }}"  
@@ -53,6 +57,7 @@ runs:
         PROD_EDITABLE_INSTALL: ${{ inputs.prod_editable_install }}
         FLAGS: ${{ inputs.flags }}
         PRIVATE_PYPI_AUTH_URL: ${{ inputs.private_pypi_auth_url }}
+        TORCH_CPU: "${{ inputs.torch_cpu }}"
       shell: bash
       run: |
         set -ux
@@ -71,6 +76,9 @@ runs:
         fi
         if [ $PROD_EDITABLE_INSTALL == "true" ]; then
           test -f setup.py && pip install -e "."
+          
+        if [ $TORCH_CPU ]; then
+          test -f setup.py && pip install -e ".[dev]" --extra-index-url https://download.pytorch.org/whl/cpu
         else
           test -f setup.py && pip install -e ".[dev]"
         fi
